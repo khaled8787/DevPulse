@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes";
 import verifyToken from "./middleware/verifyToken";
+import issuesRoutes from "./modules/issues/issues.routes";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get("/api/protected", verifyToken, (req, res) => {
     message: "Protected route accessed",
   });
 });
+app.use("/api/issues", issuesRoutes);
 
 app.get("/", (req, res) => {
   res.send("DevPulse API Running...");
