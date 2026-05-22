@@ -5,6 +5,7 @@ import { Request } from "express";
 import { getAllIssuesFromDB } from "./issues.service";
 import { getSingleIssueFromDB } from "./issues.service";
 import { updateIssueIntoDB } from "./issues.service";
+import { deleteIssueFromDB } from "./issues.service";
 
 export const createIssue = async (
   req: AuthRequest,
@@ -103,6 +104,30 @@ export const updateIssue = async (
     const err = error as Error;
 
     res.status(403).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+export const deleteIssue = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const issueId = Number(req.params.id);
+
+    await deleteIssueFromDB(issueId);
+
+    res.status(200).json({
+      success: true,
+      message: "Issue deleted successfully",
+    });
+  } catch (error) {
+    const err = error as Error;
+
+    res.status(404).json({
       success: false,
       message: err.message,
     });
