@@ -164,3 +164,82 @@ export const getSingleIssueFromDB = async (
     updated_at: issue.updated_at,
   };
 };
+
+interface IUserPayload {
+  id: number;
+  name: string;
+  role: string;
+}
+export const updateIssueIntoDB = async (
+  issueId: number,
+  payload: Partial<ICreateIssue>,
+  user: IUserPayload
+) => {
+  // get existing issue
+  const existingIssueResult = await pool.query(
+    `
+    SELECT * FROM issues
+    WHERE id = $1
+    `,
+    [issueId]
+  );
+
+  const existingIssue = existingIssueResult.rows[0];
+
+  if (!existingIssue) {
+    throw new Error("Issue not found");
+  }
+
+  // contributor rules
+  if (user.role === "contributor") {
+    // own issue check
+    if (existingIssue.reporter_id !== user.id) {
+      throw new Error(
+        "You can only update your own issue"
+      );
+    }
+
+    // status check
+    if (existingIssue.status !== "open") {
+      throw new Error(
+        "You cannot update non-open issues"
+      );
+    }
+  }
+
+  // prepare updated values
+  const updatedTitle =
+    payload.title || existingIssue.title;
+
+  const updatedDescription =
+    payload.description ||
+    existingIssue.description;
+
+  const updatedType =
+    payload.type || existingIssue.type;
+
+  // update query
+  const result = await pool.query(
+    `
+    UPDATE issues
+
+    SET
+      title = $1,
+      description = $2,
+      type = $3,
+      updated_at = CURRENT_TIMESTAMP
+
+    WHERE id = $4
+
+    RETURNING *
+    `,
+    [
+      updatedTitle,
+      updatedDescription,
+      updatedType,
+      issueId,
+    ]
+  );
+
+  return result.rows[0];
+};

@@ -4,6 +4,7 @@ import { createIssueIntoDB } from "./issues.service";
 import { Request } from "express";
 import { getAllIssuesFromDB } from "./issues.service";
 import { getSingleIssueFromDB } from "./issues.service";
+import { updateIssueIntoDB } from "./issues.service";
 
 export const createIssue = async (
   req: AuthRequest,
@@ -71,6 +72,37 @@ export const getSingleIssue = async (
     const err = error as Error;
 
     res.status(404).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+export const updateIssue = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const issueId = Number(req.params.id);
+
+    const user = req.user;
+
+    const result = await updateIssueIntoDB(
+      issueId,
+      req.body,
+      user!
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Issue updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    const err = error as Error;
+
+    res.status(403).json({
       success: false,
       message: err.message,
     });
