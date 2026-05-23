@@ -8,7 +8,6 @@ export const createIssueIntoDB = async (
 ) => {
   const { title, description, type } = payload;
 
-  // validation
   if (!title || !description || !type) {
     throw new Error("All fields are required");
   }
@@ -43,7 +42,6 @@ export const getAllIssuesFromDB = async (
   const conditions: string[] = [];
   const values: string[] = [];
 
-  // filtering
   if (query.type) {
     values.push(query.type as string);
 
@@ -56,19 +54,16 @@ export const getAllIssuesFromDB = async (
     conditions.push(`status = $${values.length}`);
   }
 
-  // add WHERE
   if (conditions.length > 0) {
     sql += ` WHERE ` + conditions.join(" AND ");
   }
 
-  // sorting
   if (query.sort === "oldest") {
     sql += ` ORDER BY created_at ASC`;
   } else {
     sql += ` ORDER BY created_at DESC`;
   }
 
-  // fetch issues
   const issuesResult: QueryResult = await pool.query(
     sql,
     values
@@ -76,12 +71,10 @@ export const getAllIssuesFromDB = async (
 
   const issues = issuesResult.rows;
 
-  // extract reporter ids
   const reporterIds = [
     ...new Set(issues.map((issue) => issue.reporter_id)),
   ];
 
-  // get users without JOIN
   let users = [];
 
   if (reporterIds.length > 0) {
@@ -97,7 +90,6 @@ export const getAllIssuesFromDB = async (
     users = usersResult.rows;
   }
 
-  // map reporter
   const formattedIssues = issues.map((issue) => {
     const reporter = users.find(
       (user) => user.id === issue.reporter_id
@@ -124,7 +116,6 @@ export const getAllIssuesFromDB = async (
 export const getSingleIssueFromDB = async (
   issueId: number
 ) => {
-  // get issue
   const issueResult = await pool.query(
     `
     SELECT * FROM issues
@@ -139,7 +130,6 @@ export const getSingleIssueFromDB = async (
     throw new Error("Issue not found");
   }
 
-  // get reporter separately (NO JOIN)
   const reporterResult = await pool.query(
     `
     SELECT id, name, role
@@ -175,7 +165,6 @@ export const updateIssueIntoDB = async (
   payload: Partial<ICreateIssue>,
   user: IUserPayload
 ) => {
-  // get existing issue
   const existingIssueResult = await pool.query(
     `
     SELECT * FROM issues
@@ -190,16 +179,13 @@ export const updateIssueIntoDB = async (
     throw new Error("Issue not found");
   }
 
-  // contributor rules
   if (user.role === "contributor") {
-    // own issue check
     if (existingIssue.reporter_id !== user.id) {
       throw new Error(
         "You can only update your own issue"
       );
     }
 
-    // status check
     if (existingIssue.status !== "open") {
       throw new Error(
         "You cannot update non-open issues"
@@ -207,7 +193,6 @@ export const updateIssueIntoDB = async (
     }
   }
 
-  // prepare updated values
   const updatedTitle =
     payload.title || existingIssue.title;
 
@@ -218,7 +203,6 @@ export const updateIssueIntoDB = async (
   const updatedType =
     payload.type || existingIssue.type;
 
-  // update query
   const result = await pool.query(
     `
     UPDATE issues
@@ -248,7 +232,6 @@ export const updateIssueIntoDB = async (
 export const deleteIssueFromDB = async (
   issueId: number
 ) => {
-  // check issue exists
   const existingIssue = await pool.query(
     `
     SELECT * FROM issues
@@ -261,7 +244,6 @@ export const deleteIssueFromDB = async (
     throw new Error("Issue not found");
   }
 
-  // delete issue
   await pool.query(
     `
     DELETE FROM issues

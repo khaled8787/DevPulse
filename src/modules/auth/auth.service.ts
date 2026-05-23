@@ -6,12 +6,10 @@ import jwt from "jsonwebtoken";
 export const signupUser = async (payload: ISignupUser) => {
   const { name, email, password, role } = payload;
 
-  // validation
   if (!name || !email || !password) {
     throw new Error("All fields are required");
   }
 
-  // check existing email
   const existingUser = await pool.query(
     "SELECT * FROM users WHERE email = $1",
     [email]
@@ -21,10 +19,8 @@ export const signupUser = async (payload: ISignupUser) => {
     throw new Error("Email already exists");
   }
 
-  // hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // insert user
   const result = await pool.query(
     `
     INSERT INTO users (name, email, password, role)
@@ -41,7 +37,6 @@ export const signupUser = async (payload: ISignupUser) => {
 export const loginUser = async (payload: ILoginUser) => {
   const { email, password } = payload;
 
-  // check user exists
   const result = await pool.query(
     "SELECT * FROM users WHERE email = $1",
     [email]
@@ -53,7 +48,6 @@ export const loginUser = async (payload: ILoginUser) => {
     throw new Error("Invalid email or password");
   }
 
-  // compare password
   const isPasswordMatched = await bcrypt.compare(
     password,
     user.password
@@ -63,7 +57,6 @@ export const loginUser = async (payload: ILoginUser) => {
     throw new Error("Invalid email or password");
   }
 
-  // generate token
   const token = jwt.sign(
     {
       id: user.id,
